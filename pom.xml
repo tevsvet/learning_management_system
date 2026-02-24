@@ -30,6 +30,7 @@
 		<java.version>21</java.version>
         <lombok.version>1.18.42</lombok.version>
         <mapstruct.version>1.6.3</mapstruct.version>
+        <springdoc.version>2.8.5</springdoc.version>
         <maven.compiler.plugin.version>3.14.1</maven.compiler.plugin.version>
 	</properties>
 	<dependencies>
@@ -84,6 +85,13 @@
 			<artifactId>spring-boot-starter-webmvc-test</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+        <!-- Springdoc -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
 	</dependencies>
 
 	<build>
