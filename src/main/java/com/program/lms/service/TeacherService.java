@@ -1,17 +1,18 @@
 package com.program.lms.service;
 
 import com.program.lms.dao.TeacherRepository;
+import com.program.lms.dto.page.PageResponse;
 import com.program.lms.dto.teacher.TeacherRequest;
 import com.program.lms.dto.teacher.TeacherResponse;
 import com.program.lms.dto.teacher.UpdateTeacherRequest;
 import com.program.lms.exception.TeacherNotFoundException;
+import com.program.lms.mapper.PageMapper;
 import com.program.lms.mapper.TeacherMapper;
 import com.program.lms.model.TeacherEntity;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -19,14 +20,14 @@ public class TeacherService {
 
     private final TeacherRepository teacherRepository;
     private final TeacherMapper teacherMapper;
+    private final PageMapper pageMapper;
 
     @Transactional(readOnly = true)
-    public List<TeacherResponse> getAll() {
+    public PageResponse<TeacherResponse> getAll(Pageable pageable) {
 
-        return teacherRepository.findAll()
-                .stream()
-                .map(teacherMapper::toResponse)
-                .toList();
+        return pageMapper.toPageResponse(
+                teacherRepository.findAll(pageable)
+                .map(teacherMapper::toResponse));
     }
 
     @Transactional

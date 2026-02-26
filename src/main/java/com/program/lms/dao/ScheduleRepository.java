@@ -1,24 +1,30 @@
 package com.program.lms.dao;
 
 import com.program.lms.model.ScheduleEntity;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 public interface ScheduleRepository extends JpaRepository<ScheduleEntity, Long> {
 
     @EntityGraph(attributePaths = {"group", "course", "teacher"})
-    List<ScheduleEntity> findAll();
+    Page<ScheduleEntity> findAll(Pageable pageable);
 
     @EntityGraph(attributePaths = {"group", "course", "teacher"})
-    List<ScheduleEntity> findByGroupId(Long groupId);
+    Page<ScheduleEntity> findByGroupId(Long groupId, Pageable pageable);
 
     @EntityGraph(attributePaths = {"group", "course", "teacher"})
-    List<ScheduleEntity> findByTeacherId(Long teacherId);
+    Page<ScheduleEntity> findByTeacherId(Long teacherId, Pageable pageable);
+
+    @Modifying
+    @Query("delete from ScheduleEntity s where s.dateTime < :threshold")
+    int deleteOlderThan(@Param("threshold") LocalDateTime threshold);
 
     @Query(value = """
             select exists(

@@ -1,5 +1,6 @@
 package com.program.lms.controller;
 
+import com.program.lms.dto.page.PageResponse;
 import com.program.lms.dto.student.StudentRequest;
 import com.program.lms.dto.student.StudentResponse;
 import com.program.lms.dto.student.UpdateStudentRequest;
@@ -16,6 +17,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,32 +33,64 @@ public class StudentController {
 
     @Operation(summary = "Get a list of all students")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "List successfully received",
-                    content = @Content(mediaType = "application/json",
-                            array = @ArraySchema(schema = @Schema(implementation = StudentResponse.class))))
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "List successfully received",
+                    content = @Content(schema = @Schema(implementation = PageResponse.class))
+            )
     })
     @GetMapping
-    public List<StudentResponse> getAll() {
+    public PageResponse<StudentResponse> getAll(Pageable pageable) {
 
-        return studentService.getAll();
+        return studentService.getAll(pageable);
+    }
+
+    @Operation(summary = "Get students by group")
+    @ApiResponses(value = {
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Students of group successfully received",
+                    content = @Content(
+                            array = @ArraySchema(schema = @Schema(implementation = StudentResponse.class)))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Group not found",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
+    })
+    @GetMapping("/group/{groupId}")
+    public List<StudentResponse> getAllByGroup(
+            @Parameter(description = "Group ID", example = "1")
+            @PathVariable Long groupId) {
+
+        return studentService.getAllByGroup(groupId);
     }
 
     @Operation(summary = "Create new student")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Student successfully created",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = StudentResponse.class))),
-            @ApiResponse(responseCode = "400", description = "Validation error",
-                    content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "404", description = "Group not found",
-                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Student successfully created",
+                    content = @Content(schema = @Schema(implementation = StudentResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Validation error",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Group not found",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
     })
     @PostMapping
     public ResponseEntity<StudentResponse> create(
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Data to create student",
                     required = true,
-                    content = @Content(mediaType = "application/json",
+                    content = @Content(
                             schema = @Schema(implementation = StudentRequest.class),
                             examples = @ExampleObject(value = """
                                     {
@@ -64,7 +98,8 @@ public class StudentController {
                                       "lastName": "Last name",
                                       "groupId": 1
                                     }
-                                    """)))
+                                    """))
+            )
             @Valid @RequestBody StudentRequest dto) {
 
         return ResponseEntity.ok(studentService.create(dto));
@@ -72,13 +107,21 @@ public class StudentController {
 
     @Operation(summary = "Update student data")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "200", description = "Student data successfully updated",
-                    content = @Content(mediaType = "application/json",
-                            schema = @Schema(implementation = StudentResponse.class))),
-            @ApiResponse(responseCode = "404", description = "Student or group not found",
-                    content = @Content(schema = @Schema(implementation = ApiError.class))),
-            @ApiResponse(responseCode = "400", description = "Validation error",
-                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+            @ApiResponse(
+                    responseCode = "200",
+                    description = "Student data successfully updated",
+                    content = @Content(schema = @Schema(implementation = StudentResponse.class))
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Student or group not found",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            ),
+            @ApiResponse(
+                    responseCode = "400",
+                    description = "Validation error",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
     })
     @PatchMapping("/{id}")
     public ResponseEntity<StudentResponse> update(
@@ -88,7 +131,7 @@ public class StudentController {
             @io.swagger.v3.oas.annotations.parameters.RequestBody(
                     description = "Data to update student",
                     required = true,
-                    content = @Content(mediaType = "application/json",
+                    content = @Content(
                             schema = @Schema(implementation = UpdateStudentRequest.class),
                             examples = @ExampleObject(value = """
                                     {
@@ -96,7 +139,8 @@ public class StudentController {
                                       "lastName": "New last name",
                                       "groupId": 2
                                     }
-                                    """)))
+                                    """))
+            )
             @Valid @RequestBody UpdateStudentRequest dto) {
 
         return ResponseEntity.ok(studentService.update(id, dto));
@@ -104,9 +148,15 @@ public class StudentController {
 
     @Operation(summary = "Delete student")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Student successfully deleted"),
-            @ApiResponse(responseCode = "404", description = "Student not found",
-                    content = @Content(schema = @Schema(implementation = ApiError.class)))
+            @ApiResponse(
+                    responseCode = "204",
+                    description = "Student successfully deleted"
+            ),
+            @ApiResponse(
+                    responseCode = "404",
+                    description = "Student not found",
+                    content = @Content(schema = @Schema(implementation = ApiError.class))
+            )
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(

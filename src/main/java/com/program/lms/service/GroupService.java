@@ -4,12 +4,15 @@ import com.program.lms.dao.GroupRepository;
 import com.program.lms.dao.StudentRepository;
 import com.program.lms.dto.group.GroupRequest;
 import com.program.lms.dto.group.GroupResponse;
+import com.program.lms.dto.page.PageResponse;
 import com.program.lms.exception.GroupNotFoundException;
 import com.program.lms.exception.StudentNotFoundException;
 import com.program.lms.mapper.GroupMapper;
+import com.program.lms.mapper.PageMapper;
 import com.program.lms.model.GroupEntity;
 import com.program.lms.model.StudentEntity;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,14 +25,14 @@ public class GroupService {
     private final GroupRepository groupRepository;
     private final StudentRepository studentRepository;
     private final GroupMapper groupMapper;
+    private final PageMapper pageMapper;
 
     @Transactional(readOnly = true)
-    public List<GroupResponse> getAll() {
+    public PageResponse<GroupResponse> getAll(Pageable pageable) {
 
-        return groupRepository.findAll()
-                .stream()
-                .map(groupMapper::toResponse)
-                .toList();
+        return pageMapper.toPageResponse(
+                groupRepository.findAll(pageable)
+                .map(groupMapper::toResponse));
     }
 
     @Transactional

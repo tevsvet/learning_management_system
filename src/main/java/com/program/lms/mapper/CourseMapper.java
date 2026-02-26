@@ -1,6 +1,7 @@
 package com.program.lms.mapper;
 
 import com.program.lms.dto.course.CourseResponse;
+import com.program.lms.dto.course.CourseShortResponse;
 import com.program.lms.dto.course.UpdateCourseRequest;
 import com.program.lms.mapper.util.StringMapper;
 import com.program.lms.model.CourseEntity;
@@ -15,6 +16,8 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 public interface CourseMapper {
 
     CourseResponse toResponse(CourseEntity course);
+
+    CourseShortResponse toShortResponse(CourseEntity course);
 
     @Mapping(target = "description",
             source = "description",

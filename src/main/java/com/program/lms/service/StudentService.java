@@ -2,15 +2,18 @@ package com.program.lms.service;
 
 import com.program.lms.dao.GroupRepository;
 import com.program.lms.dao.StudentRepository;
+import com.program.lms.dto.page.PageResponse;
 import com.program.lms.dto.student.StudentRequest;
 import com.program.lms.dto.student.StudentResponse;
 import com.program.lms.dto.student.UpdateStudentRequest;
 import com.program.lms.exception.GroupNotFoundException;
 import com.program.lms.exception.StudentNotFoundException;
+import com.program.lms.mapper.PageMapper;
 import com.program.lms.mapper.StudentMapper;
 import com.program.lms.model.GroupEntity;
 import com.program.lms.model.StudentEntity;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -23,11 +26,23 @@ public class StudentService {
     private final StudentRepository studentRepository;
     private final GroupRepository groupRepository;
     private final StudentMapper studentMapper;
+    private final PageMapper pageMapper;
 
     @Transactional(readOnly = true)
-    public List<StudentResponse> getAll() {
+    public PageResponse<StudentResponse> getAll(Pageable pageable) {
 
-        return studentRepository.findAll()
+        return pageMapper.toPageResponse(
+                studentRepository.findAll(pageable)
+                .map(studentMapper::toResponse));
+    }
+
+    @Transactional(readOnly = true)
+    public List<StudentResponse> getAllByGroup(Long groupId) {
+
+        groupRepository.findById(groupId)
+                .orElseThrow(() -> new GroupNotFoundException("Group not Found"));
+
+        return studentRepository.findByGroupId(groupId)
                 .stream()
                 .map(studentMapper::toResponse)
                 .toList();

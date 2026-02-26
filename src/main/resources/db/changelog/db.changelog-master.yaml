@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - include:
+      file: changes/001-create-course-table.sql
+  - include:
+      file: changes/002-create-group-table.sql
+  - include:
+      file: changes/003-create-teacher-table.sql
+  - include:
+      file: changes/004-create-student-table.sql
+  - include:
+      file: changes/005-create-schedule-table.sql

@@ -1,22 +1,23 @@
 package com.program.lms.service;
 
-import com.program.lms.config.LessonConfig;
 import com.program.lms.dao.*;
+import com.program.lms.domain.schedule.ScheduleCalculator;
+import com.program.lms.domain.schedule.ScheduleValidator;
+import com.program.lms.dto.page.PageResponse;
 import com.program.lms.dto.schedule.ScheduleRequest;
 import com.program.lms.dto.schedule.ScheduleResponse;
 import com.program.lms.dto.schedule.UpdateScheduleRequest;
 import com.program.lms.exception.*;
+import com.program.lms.mapper.PageMapper;
 import com.program.lms.mapper.ScheduleMapper;
 import com.program.lms.model.*;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ScheduleService {
@@ -26,38 +27,38 @@ public class ScheduleService {
     private final CourseRepository courseRepository;
     private final TeacherRepository teacherRepository;
     private final ScheduleMapper scheduleMapper;
+    private final PageMapper pageMapper;
+    private final ScheduleCalculator scheduleCalculator;
+    private final ScheduleValidator scheduleValidator;
 
     @Transactional(readOnly = true)
-    public List<ScheduleResponse> getAll() {
+    public PageResponse<ScheduleResponse> getAll(Pageable pageable) {
 
-        return scheduleRepository.findAll()
-                .stream()
-                .map(scheduleMapper::toResponse)
-                .toList();
+        return pageMapper.toPageResponse(
+                scheduleRepository.findAll(pageable)
+                .map(scheduleMapper::toResponse));
     }
 
     @Transactional(readOnly = true)
-    public List<ScheduleResponse> getAllByGroup(Long groupId) {
+    public PageResponse<ScheduleResponse> getAllByGroup(Long groupId, Pageable pageable) {
 
         groupRepository.findById(groupId)
                 .orElseThrow(() -> new GroupNotFoundException("Group not Found"));
 
-        return scheduleRepository.findByGroupId(groupId)
-                .stream()
-                .map(scheduleMapper::toResponse)
-                .toList();
+        return pageMapper.toPageResponse(
+                scheduleRepository.findByGroupId(groupId, pageable)
+                .map(scheduleMapper::toResponse));
     }
 
     @Transactional(readOnly = true)
-    public List<ScheduleResponse> getAllByTeacher(Long teacherId) {
+    public PageResponse<ScheduleResponse> getAllByTeacher(Long teacherId, Pageable pageable) {
 
         teacherRepository.findById(teacherId)
                 .orElseThrow(() -> new TeacherNotFoundException("Teacher not Found"));
 
-        return scheduleRepository.findByTeacherId(teacherId)
-                .stream()
-                .map(scheduleMapper::toResponse)
-                .toList();
+        return pageMapper.toPageResponse(
+                scheduleRepository.findByTeacherId(teacherId, pageable)
+                .map(scheduleMapper::toResponse));
     }
 
     @Transactional
@@ -73,21 +74,17 @@ public class ScheduleService {
                 .orElseThrow(() -> new TeacherNotFoundException("Teacher not Found"));
 
         LocalDateTime start = dto.dateTime();
-        LocalDateTime end = start.plus(LessonConfig.LESSON_DURATION);
-        long durationMinutes = LessonConfig.LESSON_DURATION.toMinutes();
+        LocalDateTime end = scheduleCalculator.calculateEnd(start);
 
-        if (scheduleRepository.groupHasTimeConflict(
-                dto.groupId(), start, end, durationMinutes)) {
-            throw new ScheduleConflictException("Group already has a lesson at this time");
-        }
+        scheduleValidator.validateWorkingHours(start, end);
 
-        if (scheduleRepository.teacherHasTimeConflict(
-                dto.teacherId(), start, end, durationMinutes)) {
-            throw new ScheduleConflictException("Teacher already has a lesson at this time");
-        }
+        long durationMinutes = scheduleCalculator.calculateDurationMinutes();
+
+        scheduleValidator.validateGroupConflict(dto.groupId(), start, end, durationMinutes);
+        scheduleValidator.validateTeacherConflict(dto.teacherId(), start, end, durationMinutes);
 
         ScheduleEntity lesson = ScheduleEntity.builder()
-                .dateTime(dto.dateTime())
+                .dateTime(start)
                 .group(group)
                 .course(course)
                 .teacher(teacher)
@@ -105,21 +102,17 @@ public class ScheduleService {
                 .orElseThrow(() -> new ScheduleNotFoundException("Lesson not found"));
 
         LocalDateTime start = dto.dateTime();
-        LocalDateTime end = start.plus(LessonConfig.LESSON_DURATION);
-        long durationMinutes = LessonConfig.LESSON_DURATION.toMinutes();
+        LocalDateTime end = scheduleCalculator.calculateEnd(start);
+
+        scheduleValidator.validateWorkingHours(start, end);
+
+        long durationMinutes = scheduleCalculator.calculateDurationMinutes();
 
         Long groupId = lesson.getGroup().getId();
         Long teacherId = lesson.getTeacher().getId();
 
-        if (scheduleRepository.groupHasTimeConflictForUpdate(
-                id, groupId, start, end, durationMinutes)) {
-            throw new ScheduleConflictException("Group already has a lesson at this time");
-        }
-
-        if (scheduleRepository.teacherHasTimeConflictForUpdate(
-                id, teacherId, start, end, durationMinutes)) {
-            throw new ScheduleConflictException("Teacher already has a lesson at this time");
-        }
+        scheduleValidator.validateGroupConflictForUpdate(id, groupId, start, end, durationMinutes);
+        scheduleValidator.validateTeacherConflictForUpdate(id, teacherId, start, end, durationMinutes);
 
         scheduleMapper.updateScheduleFromDto(lesson, dto);
 

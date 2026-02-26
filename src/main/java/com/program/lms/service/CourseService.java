@@ -3,15 +3,17 @@ package com.program.lms.service;
 import com.program.lms.dao.CourseRepository;
 import com.program.lms.dto.course.CourseRequest;
 import com.program.lms.dto.course.CourseResponse;
+import com.program.lms.dto.course.CourseShortResponse;
 import com.program.lms.dto.course.UpdateCourseRequest;
+import com.program.lms.dto.page.PageResponse;
 import com.program.lms.exception.CourseNotFoundException;
 import com.program.lms.mapper.CourseMapper;
+import com.program.lms.mapper.PageMapper;
 import com.program.lms.model.CourseEntity;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -19,14 +21,14 @@ public class CourseService {
 
     private final CourseRepository courseRepository;
     private final CourseMapper courseMapper;
+    private final PageMapper pageMapper;
 
     @Transactional(readOnly = true)
-    public List<CourseResponse> getAll() {
+    public PageResponse<CourseShortResponse> getAll(Pageable pageable) {
 
-        return courseRepository.findAll()
-                .stream()
-                .map(courseMapper::toResponse)
-                .toList();
+        return pageMapper.toPageResponse(
+                courseRepository.findAll(pageable)
+                .map(courseMapper::toShortResponse));
     }
 
     @Transactional
