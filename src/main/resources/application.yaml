@@ -1,3 +1,41 @@
 spring:
-  application:
-    name: lms
+  data:
+    web:
+      pageable:
+        default-page-size: 20
+        max-page-size: 100
+  datasource:
+    url: jdbc:postgresql://localhost:5432/lms
+    username: admin
+    password: admin
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    url: /api-docs
+    config-url: /api-docs/swagger-config
+    operations-sorter: method
+
+logging:
+  level:
+    root: INFO
+
+app:
+  cleanup-cron: "0 0 0 * * *"
+
+schedule:
+  lesson-duration-minutes: 90
+  break-duration-minutes: 10
+  start-hour: 8
+  end-hour: 20
